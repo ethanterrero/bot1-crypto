@@ -9,6 +9,7 @@ import os
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 
@@ -86,3 +87,48 @@ class KronosPredictor:
             top_p=top_p,
             sample_count=sample_count,
         )
+
+    def predict_samples(
+        self,
+        df: pd.DataFrame,
+        pred_len: int,
+        n_samples: int = 20,
+        T: float = 1.0,
+        top_p: float = 0.9,
+    ) -> np.ndarray:
+        """Draw n_samples independent forecasts and return predicted close paths.
+
+        Kronos averages samples internally when sample_count>1 (see kronos.py:467),
+        so to recover dispersion we call predict() n_samples times with sample_count=1
+        and stack the results. Returns shape (n_samples, pred_len).
+        """
+        missing = self.REQUIRED_COLUMNS - set(df.columns)
+        if missing:
+            raise ValueError(f"df missing columns: {missing}")
+        if len(df) < 2:
+            raise ValueError("Need at least 2 rows of history to infer cadence.")
+
+        df = df.copy()
+        if "amount" not in df.columns:
+            df["amount"] = df["close"] * df["volume"]
+
+        x_df = df[["open", "high", "low", "close", "volume", "amount"]].reset_index(drop=True)
+        x_timestamp = pd.to_datetime(df["timestamp"]).reset_index(drop=True)
+        cadence = x_timestamp.iloc[-1] - x_timestamp.iloc[-2]
+        last = x_timestamp.iloc[-1]
+        y_timestamp = pd.Series([last + cadence * (i + 1) for i in range(pred_len)])
+
+        out = np.empty((n_samples, pred_len), dtype=np.float64)
+        for i in range(n_samples):
+            pred = self._predictor.predict(
+                df=x_df,
+                x_timestamp=x_timestamp,
+                y_timestamp=y_timestamp,
+                pred_len=pred_len,
+                T=T,
+                top_p=top_p,
+                sample_count=1,
+                verbose=False,
+            )
+            out[i] = pred["close"].to_numpy()
+        return out
