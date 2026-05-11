@@ -1,0 +1,17 @@
+[tool.pylint.main]
+# `model` is the Kronos repo loaded via sys.path at runtime; never importable in CI.
+ignored-modules = ["model"]
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "too-many-arguments",
+    "too-many-positional-arguments",
+    "too-many-locals",
+    "too-many-instance-attributes",
+    "import-outside-toplevel",
+    "unused-argument",
+    "invalid-name",
+]
