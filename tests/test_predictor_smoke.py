@@ -49,6 +49,7 @@ def test_predict_samples_returns_expected_shape():
 
 
 def test_data_module_imports():
+    # pylint: disable=unused-import,import-outside-toplevel
     from bot1_crypto import baselines, data, eval as eval_mod  # noqa: F401
     from bot1_crypto.predictor import KronosPredictor  # noqa: F401
 

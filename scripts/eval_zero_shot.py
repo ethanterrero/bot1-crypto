@@ -104,7 +104,7 @@ def main():
     if args.summary_out:
         sp = Path(args.summary_out)
         sp.parent.mkdir(parents=True, exist_ok=True)
-        sp.write_text(json.dumps(summary, indent=2, default=str))
+        sp.write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
         print(f"Wrote summary to {sp}")
 
 
